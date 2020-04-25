@@ -2,12 +2,10 @@ package com.angelo.testapplications.presentation.signin.presenter
 
 import android.content.Intent
 import android.text.TextUtils
-import android.widget.Toast
 import androidx.core.util.PatternsCompat
 import com.angelo.testapplications.domain.interactors.signIn.SignInInteractor
 import com.angelo.testapplications.presentation.signin.exception.FirebaseSignInException
 import com.angelo.testapplications.presentation.signin.SignInContract
-import com.angelo.testapplications.presentation.signin.view.SignInActivity
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
@@ -67,7 +65,23 @@ class SignInPresenter(val signInInteractor:SignInInteractor):SignInContract.Sign
         }
     }
 
-    override fun signInWithGoogleAccount(requestCode: Int, resultCode: Int, data: Intent?) {
+
+    override fun signInWithGoogleAccount(requestCode: Int, resultCode: Int, data: Intent?){
+        launch{
+            try {
+                signInInteractor.signInWithGoogleAccount(requestCode,resultCode,data)
+                if(isViewAttached()){
+                    view?.navigateToUserProfile()
+                }
+            }catch(e:FirebaseSignInException){
+                if (isViewAttached()){
+                    view?.showError(e.message!!)
+                }
+            }
+        }
+    }
+
+    /*override fun signInWithGoogleAccount(requestCode: Int, resultCode: Int, data: Intent?) {
         launch {
             try {
                 signInInteractor.signInWithGoogleAccount(requestCode,resultCode,data)
@@ -80,19 +94,6 @@ class SignInPresenter(val signInInteractor:SignInInteractor):SignInContract.Sign
                 }
             }
         }
-    }
-
-    /*override fun signInWithGoogleAccount() {
-
-            try {
-                signInInteractor.signInWithGoogleAccount()
-            }catch(e:FirebaseSignInException){
-                view?.showError(e.message!!)
-            }
-
-
     }*/
-
-
 
 }

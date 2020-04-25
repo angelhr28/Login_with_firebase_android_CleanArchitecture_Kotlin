@@ -1,5 +1,9 @@
 package com.angelo.testapplications.presentation.signup
 
+
+import android.graphics.ImageDecoder
+import android.net.Uri
+
 interface SignUpContract {
 
     interface SignUpView{
@@ -8,6 +12,8 @@ interface SignUpContract {
         fun showProgressBar()
         fun hideProgressBar()
 
+        fun openGallery()
+        fun showGallery()
         fun signUp()
 
         fun navigateToUserProfile()
@@ -24,7 +30,14 @@ interface SignUpContract {
         fun checkValidEmail(email: String):Boolean
         fun checkEmptyPassword(password: String):Boolean
         fun checkPasswordMatch(pw1: String,pw2:String):Boolean
-        fun signUp(fullname:String,email:String,password:String)
+        fun checkImage(uri: Uri?):Boolean
+
+        fun checkRequestPermission(requestCode: Int,
+                                   permissions: Array<out String>,
+                                   grantResults: IntArray)
+
+
+        fun signUp(name:String,email:String,password:String,filePath:Uri?)
 
     }
 

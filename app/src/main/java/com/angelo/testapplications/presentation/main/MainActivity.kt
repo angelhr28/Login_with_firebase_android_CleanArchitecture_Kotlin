@@ -4,7 +4,7 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import com.angelo.testapplications.presentation.signin.view.SignInActivity
-import com.angelo.testapplications.presentation.userprofile.UserProfileActivity
+import com.angelo.testapplications.presentation.userprofile.view.UserProfileActivity
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
@@ -18,7 +18,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun goTo(){
         if(auth.currentUser != null){
-            startActivity(Intent(this,UserProfileActivity::class.java))
+            startActivity(Intent(this,
+                UserProfileActivity::class.java))
             finish()
         }else{
             startActivity(Intent(this,SignInActivity::class.java))

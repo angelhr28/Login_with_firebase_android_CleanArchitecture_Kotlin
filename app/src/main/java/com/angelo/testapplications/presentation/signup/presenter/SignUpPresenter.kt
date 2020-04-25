@@ -1,12 +1,20 @@
 package com.angelo.testapplications.presentation.signup.presenter
 
 
+import android.app.Activity
+import android.content.ContentResolver
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.ImageDecoder
+import android.net.Uri
 import android.text.TextUtils
+import android.util.Log
 import android.widget.Toast
 import androidx.core.util.PatternsCompat
 import com.angelo.testapplications.domain.interactors.signup.SignUpInteractor
 import com.angelo.testapplications.presentation.signup.SignUpContract
 import com.angelo.testapplications.presentation.signup.exception.FirebaseSignUpException
+import com.angelo.testapplications.presentation.signup.view.SignUpActivity
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
@@ -55,11 +63,31 @@ class SignUpPresenter(val signUpInteractor:SignUpInteractor):SignUpContract.Sign
         return pw1 == pw2
     }
 
-    override fun signUp(fullname: String, email: String, password: String) {
+    override fun checkImage(uri: Uri?): Boolean {
+        return uri != null
+    }
+
+    override fun checkRequestPermission(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when(requestCode){
+            SignUpActivity.REQUEST_GALLERY_CODE ->{
+                if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    view?.showGallery()
+                }
+            }
+        }
+    }
+
+
+    override fun signUp(name: String, email: String, password: String, filePath:Uri?) {
         launch {
             view?.showProgressBar()
             try {
-                signUpInteractor.createUserWithEmailAndPassword(fullname,email,password)
+
+                signUpInteractor.createUserWithEmailAndPassword(name,email,password,filePath!!)
                 if(isViewAttached()){
                     view?.hideProgressBar()
                     view?.navigateToUserProfile()
@@ -72,5 +100,7 @@ class SignUpPresenter(val signUpInteractor:SignUpInteractor):SignUpContract.Sign
             }
         }
     }
+
+
 
 }

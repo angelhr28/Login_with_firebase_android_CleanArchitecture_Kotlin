@@ -1,6 +1,12 @@
 package com.angelo.testapplications.presentation.signup.view
 
+import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import com.angelo.testapplications.R
@@ -9,12 +15,21 @@ import com.angelo.testapplications.domain.interactors.signup.SignUpInteractorImp
 import com.angelo.testapplications.presentation.signin.view.SignInActivity
 import com.angelo.testapplications.presentation.signup.SignUpContract
 import com.angelo.testapplications.presentation.signup.presenter.SignUpPresenter
-import com.angelo.testapplications.presentation.userprofile.UserProfileActivity
+import com.angelo.testapplications.presentation.userprofile.view.UserProfileActivity
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_sign_up.*
+import java.io.ByteArrayOutputStream
 
 class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
 
     lateinit var presenter:SignUpPresenter
+
+    private var filePath:Uri? = null
+    private val auth:FirebaseAuth by lazy {FirebaseAuth.getInstance()}
+
+    companion object{
+        const val REQUEST_GALLERY_CODE = 1002
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,6 +38,10 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
 
         btn_send_dates.setOnClickListener {
             signUp()
+        }
+
+        btn_select_image.setOnClickListener {
+            openGallery()
         }
 
     }
@@ -43,15 +62,77 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         progressBar_signUp.visibility = View.GONE
     }
 
+    override fun openGallery(){
+        //Verificando version de android
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M){
+            if(checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED){
+                val permissionGallery = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                requestPermissions(permissionGallery,REQUEST_GALLERY_CODE)
+            }else{
+                showGallery()
+            }
+        }else{
+            showGallery()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        presenter.checkRequestPermission(requestCode, permissions, grantResults)
+    }
+
+    override fun showGallery(){
+        val intentGallery = Intent(Intent.ACTION_PICK) // intent implicito
+        intentGallery.type = "image/*"
+        startActivityForResult(intentGallery,REQUEST_GALLERY_CODE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+
+        super.onActivityResult(requestCode, resultCode, data)
+        if(resultCode == Activity.RESULT_OK && requestCode == REQUEST_GALLERY_CODE && data != null){
+
+           filePath = data.data
+
+            val bitMapImage = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver,filePath!!))
+            bitMapImage.compress(Bitmap.CompressFormat.JPEG,100,ByteArrayOutputStream())
+
+            //val bitMap = getResizedBitmap(bitMapImage,1024)
+            /*val bitMapImage:Bitmap = MediaStore.Images.Media.getBitmap(contentResolver,filePath)
+            getResizedBitmap(bitMapImage,1024)
+
+            //Comprimimos la imagen a JPEG, tenemos la calidad al 100 y hacemos con baos que la imagen sea mas ligera
+            val baos = ByteArrayOutputStream()
+            bitMapImage.compress(Bitmap.CompressFormat.JPEG,100,baos)
+
+            val data = baos.toByteArray()
+
+            var uploadTask = FirebaseStorage.getInstance().reference.putBytes(data)*/
+
+            //enviamos la imagen al imageView
+            iV_Photo.setImageBitmap(bitMapImage)
+        }
+    }
 
     override fun signUp() {
 
-        val fullname = etxt_name_signUp.text.toString().trim()
+        val name = etxt_name_signUp.text.toString().trim()
         val email = etxt_email_signUp.text.toString().trim()
         val password = etxt_password_signUp.text.toString().trim()
         val confirmPassword = etxt_confirm_password_signUp.text.toString().trim()
+        val image = filePath
 
-        if (presenter.checkEmptyName(fullname)){
+
+        if(!presenter.checkImage(image)){
+            toast(this,"Select an image, please")
+            return
+        }
+
+        if (presenter.checkEmptyName(name)){
             etxt_name_signUp.error = "Enter an name, please"
             return
         }
@@ -72,12 +153,12 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
             return
         }
 
-        presenter.signUp(fullname,email,confirmPassword)
+        presenter.signUp(name,email,confirmPassword,image)
 
     }
 
     override fun navigateToUserProfile() {
-        val intent = Intent(this,SignInActivity::class.java)
+        val intent = Intent(this,UserProfileActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
     }

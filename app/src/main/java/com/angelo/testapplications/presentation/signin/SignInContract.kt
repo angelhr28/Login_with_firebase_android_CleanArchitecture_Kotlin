@@ -15,8 +15,8 @@ interface SignInContract {
 
 
         fun navigateToRegister()
-        fun navigateToRoverPassword()
         fun navigateToUserProfile()
+        fun navigateToRecoverPassword()
 
     }
 
