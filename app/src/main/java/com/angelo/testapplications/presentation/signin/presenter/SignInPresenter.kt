@@ -1,17 +1,27 @@
 package com.angelo.testapplications.presentation.signin.presenter
 
+import android.app.Activity
 import android.content.Intent
 import android.text.TextUtils
 import androidx.core.util.PatternsCompat
+import com.angelo.testapplications.R
 import com.angelo.testapplications.domain.interactors.signIn.SignInInteractor
 import com.angelo.testapplications.presentation.signin.exception.FirebaseSignInException
 import com.angelo.testapplications.presentation.signin.SignInContract
+import com.angelo.testapplications.presentation.signin.view.SignInActivity
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.AuthCredential
 import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 class SignInPresenter(val signInInteractor:SignInInteractor):SignInContract.SignInPresenter,CoroutineScope {
 
+    //Google
+    private lateinit var signInClient: GoogleSignInClient
+
     private var view:SignInContract.SignInView?=null
+
 
     private val job = Job()
 
@@ -81,19 +91,22 @@ class SignInPresenter(val signInInteractor:SignInInteractor):SignInContract.Sign
         }
     }
 
-    /*override fun signInWithGoogleAccount(requestCode: Int, resultCode: Int, data: Intent?) {
+
+    override fun signInWithFacebookAccount(credential:AuthCredential){
         launch {
-            try {
-                signInInteractor.signInWithGoogleAccount(requestCode,resultCode,data)
+            try{
+                signInInteractor.signInWithFacebookAccount(credential)
                 if(isViewAttached()){
                     view?.navigateToUserProfile()
                 }
-            }catch (e:FirebaseSignInException){
+            }catch(e:FirebaseSignInException){
                 if(isViewAttached()){
                     view?.showError(e.message!!)
                 }
             }
         }
-    }*/
+    }
+
+
 
 }

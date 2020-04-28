@@ -33,15 +33,16 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         presenter = SignUpPresenter(SignUpInteractorImpl())
         presenter.attachView(this)
 
-        btn_send_dates.setOnClickListener {
-            signUp()
-        }
-
         btn_select_image.setOnClickListener {
             openGallery()
+        }
+
+        btn_send_dates.setOnClickListener {
+            signUp()
         }
 
     }
@@ -126,7 +127,18 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         val confirmPassword = etxt_confirm_password_signUp.text.toString().trim()
         val image = filePath
 
+        checkEmptyFields(image,name,email,password, confirmPassword)
 
+        presenter.signUp(name,email,confirmPassword,image)
+    }
+
+    override fun navigateToUserProfile() {
+        val intent = Intent(this,UserProfileActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+    }
+
+    fun checkEmptyFields(image:Uri?,name:String,email:String,password:String,confirmPassword:String){
         if(!presenter.checkImage(image)){
             toast(this,"Select an image, please")
             return
@@ -152,15 +164,6 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
             etxt_confirm_password_signUp.error = "The passwords do not match"
             return
         }
-
-        presenter.signUp(name,email,confirmPassword,image)
-
-    }
-
-    override fun navigateToUserProfile() {
-        val intent = Intent(this,UserProfileActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
     }
 
     override fun onDestroy() {
@@ -168,6 +171,8 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         presenter.detachView()
         presenter.detachJob()
     }
+
+
 
 
 }

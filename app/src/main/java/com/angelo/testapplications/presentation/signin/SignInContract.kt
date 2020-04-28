@@ -1,6 +1,7 @@
 package com.angelo.testapplications.presentation.signin
 
 import android.content.Intent
+import com.google.firebase.auth.AuthCredential
 
 interface SignInContract {
 
@@ -32,6 +33,8 @@ interface SignInContract {
 
         fun signInWithEmailAndPassword(email:String,password:String)
         fun signInWithGoogleAccount(requestCode:Int,resultCode:Int,data:Intent?)
+        fun signInWithFacebookAccount(credential: AuthCredential)
+
 
     }
 

@@ -19,6 +19,9 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.facebook.AccessToken
+import com.facebook.Profile
+import com.facebook.login.LoginManager
 import com.firebase.ui.auth.AuthUI
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -30,16 +33,17 @@ import kotlinx.android.synthetic.main.activity_user_profile.*
 
 class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
 
-    lateinit var presenter:UserProfilePresenter
-    private var googleSignInClient:GoogleSignInClient?=null
+    private lateinit var presenter:UserProfilePresenter
+    private lateinit var googleSignInClient:GoogleSignInClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         presenter = UserProfilePresenter(UserProfileInteractorImpl())
         presenter.attachView(this)
-        googleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN)
         presenter.getUserFromFirebase()
+
+        googleSignInClient = GoogleSignIn.getClient(this, GoogleSignInOptions.DEFAULT_SIGN_IN)
 
         btn_signOut.setOnClickListener {
             signOut()
@@ -67,48 +71,7 @@ class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
 
     override fun setUserFromFirebase(user: User?) {
 
-        txt_name_user_profile.text = user?.name.toString()
-        txt_email_user_profile.text = user?.email.toString()
-        Glide
-            .with(this)
-            .load(user?.image)
-            .centerCrop()
-            .listener(object: RequestListener<Drawable>{
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    progressBar_uploadImage.visibility = View.GONE
-                    iV_photo_user_profile.visibility = View.VISIBLE
-                    iV_photo_user_profile.setImageResource(R.drawable.ic_error_black_24dp)
-                    return false
-                }
-
-                override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    dataSource: DataSource?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    progressBar_uploadImage.visibility = View.GONE
-                    iV_photo_user_profile.visibility = View.VISIBLE
-                    return false
-                }
-
-            })
-            .into(iV_photo_user_profile)
-
-
-
-        //Para el usuario logeado con correo y contraseña
-        //getDate(user)
-
-        //Para logeo con Google
-        /*val signInAccount = GoogleSignIn.getLastSignedInAccount(this)
-        getDatesFromGoogle(signInAccount)*/
+        getDates(user)
 
     }
 
@@ -116,16 +79,29 @@ class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
         presenter.signOut(this)
         //Cerrar sesión cuando se logea con Google
         //Primero cerrar sesión en firebase y luego en google
-        /*if(googleSignInClient != null){
+        if(GoogleSignIn.getLastSignedInAccount(this) != null){
             signOutGoogle()
-        }*/
+        }else if(isLoggedInWithFacebook()){
+            logOutFacebook()
+        }
+
     }
 
-    //funcion cerrar sesion de google
+    //logout function to google
     fun signOutGoogle(){
         googleSignInClient?.signOut()?.addOnCompleteListener {
             toast(this,"Cerró sesión de Google")
         }
+    }
+
+    //logout function to facebook
+    fun isLoggedInWithFacebook():Boolean{
+        return AccessToken.getCurrentAccessToken() != null && Profile.getCurrentProfile() != null
+    }
+
+    fun logOutFacebook(){
+        toast(this,"Cerró sesión de Facebook")
+        LoginManager.getInstance().logOut()
     }
 
     override fun navigateToSignIn() {
@@ -134,15 +110,7 @@ class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
         startActivity(intent)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        presenter.detachView()
-        presenter.detachJob()
-    }
-
-
-
-    fun getDate(user:User?){
+    fun getDates(user:User?){
         Glide
             .with(this)
             .load(user?.image)
@@ -178,39 +146,11 @@ class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
         txt_name_user_profile.text = user?.name.toString()
         txt_email_user_profile.text = user?.email.toString()
     }
-    fun getDatesFromGoogle(signInAccount:GoogleSignInAccount?){
-        txt_name_user_profile.text = signInAccount?.displayName.toString()
-        txt_email_user_profile.text = signInAccount?.email.toString()
-        Glide
-            .with(this)
-            .load(signInAccount?.photoUrl)
-            .centerCrop()
-            .listener(object: RequestListener<Drawable>{
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    progressBar_uploadImage.visibility = View.GONE
-                    iV_photo_user_profile.visibility = View.VISIBLE
-                    iV_photo_user_profile.setImageResource(R.drawable.ic_error_black_24dp)
-                    return false
-                }
 
-                override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    dataSource: DataSource?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    progressBar_uploadImage.visibility = View.GONE
-                    iV_photo_user_profile.visibility = View.VISIBLE
-                    return false
-                }
-
-            })
-            .into(iV_photo_user_profile)
+    override fun onDestroy() {
+        super.onDestroy()
+        presenter.detachView()
+        presenter.detachJob()
     }
+
 }

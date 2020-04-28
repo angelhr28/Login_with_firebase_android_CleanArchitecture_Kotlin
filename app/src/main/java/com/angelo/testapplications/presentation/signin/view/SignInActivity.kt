@@ -3,8 +3,11 @@ package com.angelo.testapplications.presentation.signin.view
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
 import android.view.View
+import android.widget.Button
+import androidx.core.text.HtmlCompat
 import com.angelo.testapplications.R
 import com.angelo.testapplications.base.BaseActivity
 import com.angelo.testapplications.domain.interactors.signIn.SignInInteractorImpl
@@ -23,21 +26,24 @@ import kotlinx.android.synthetic.main.activity_sign_inn.*
 import com.facebook.appevents.AppEventsLogger
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import com.facebook.login.widget.LoginButton
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.database.FirebaseDatabase
+import java.util.*
+import java.util.Arrays.asList
 
 
 class SignInActivity : BaseActivity(),SignInContract.SignInView {
 
+    //Presenter
     private lateinit var presenter: SignInPresenter
+
+    //facebook
+    private lateinit var callbackManager: CallbackManager
+    //Google
     private lateinit var signInClient: GoogleSignInClient
-    private val auth:FirebaseAuth by lazy{FirebaseAuth.getInstance()}
-    private val dbReference by lazy{FirebaseDatabase.getInstance()}
-    private lateinit var callbackManager:CallbackManager
-    private lateinit var facebookLoginManager:LoginManager
 
     companion object{
-        const val RC_SIGN_IN = 1001
         const val RC_SIGN_IN_GOOGLE = 9001
         const val RC_SIGN_IN_FACEBOOK = 64206
     }
@@ -49,11 +55,10 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         presenter = SignInPresenter(SignInInteractorImpl())
         presenter.attachView(this)
 
-
-        btn_signIn_asd.setOnClickListener {
+        //Sign in with Email and Password
+        btn_signIn.setOnClickListener {
             signIn()
         }
-
 
         txt_register.setOnClickListener {
             navigateToRegister()
@@ -66,14 +71,16 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         // Configure Google Client
         configureGoogleClient()
 
-        btn_login_goo.setOnClickListener {
+        btnSignInGoogle.setOnClickListener {
+            changeClick(btnSignInGoogle)
             signInWithGoogleAccount()
         }
 
         //Configure Facebook Login
         configureFacebookLogin()
 
-        btn_login_fb.setOnClickListener {
+        btnSignInFacebook.setOnClickListener {
+            changeClick(btnSignInFacebook)
             signInWithFacebookAccount()
         }
 
@@ -90,57 +97,33 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
     }
 
     override fun showProgressBar() {
-        btn_signIn_asd.visibility = View.GONE
+        btn_signIn.visibility = View.GONE
         progressBar_signIn.visibility = View.VISIBLE
     }
 
     override fun hideProgressBar() {
         progressBar_signIn.visibility = View.GONE
-        btn_signIn_asd.visibility = View.VISIBLE
+        btn_signIn.visibility = View.VISIBLE
     }
 
+
+    //--------------Sign in With EmailAndPassword-----------------------
     override fun signIn() {
         val email = etxt_email.text.toString().trim()
         val password = etxt_password.text.toString().trim()
 
-        if(presenter.checkEmptyEmail(email)){
-            etxt_email.error = "Enter an e-mail, please."
-            return
-        }
-
-        if(!presenter.checkValidEmail(email)){
-            etxt_email.error = "The e-mail is invalid."
-            return
-        }
-
-        if(presenter.checkEmptyPassword(password)){
-            etxt_password.error = "Enter an password, please."
-            return
-        }
-
-
+        checkFields(email,password)
         presenter.signInWithEmailAndPassword(email,password)
-
-
     }
 
 
-
-    //Sign in With Google
-
+    //--------------Sign in With Google-----------------------
     fun configureGoogleClient(){
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            //for the requestIdToken, this is in the values.xml file that
-            //is generated from your google-services.json
             .requestIdToken(getString(R.string.default_web_client_id))
             .requestEmail()
             .build()
-        // Build a GoogleSignInClient with the options specified by gso.
         signInClient = GoogleSignIn.getClient(this,gso)
-
-        // Set the dimensions of the sign-in button.
-        btn_login_goo.setSize(SignInButton.SIZE_ICON_ONLY)
-
     }
 
     override fun signInWithGoogleAccount() {
@@ -148,6 +131,8 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         startActivityForResult(intent, RC_SIGN_IN_GOOGLE)
     }
 
+
+    //--------------Sign in With Facebook-----------------------
     fun configureFacebookLogin(){
         callbackManager = CallbackManager.Factory.create()
         btn_login_fb.setReadPermissions("email","public_profile")
@@ -156,11 +141,13 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
     private fun signInWithFacebookAccount() {
         btn_login_fb.registerCallback(callbackManager,object :FacebookCallback<LoginResult>{
             override fun onSuccess(result: LoginResult?) {
-                handleFacebookAccessToken(result!!.accessToken)
+                val accessToken = result!!.accessToken
+                val credential = FacebookAuthProvider.getCredential(accessToken.token)
+                presenter.signInWithFacebookAccount(credential)
             }
 
             override fun onCancel() {
-                toast(applicationContext,"Cancel Login")
+                toast(applicationContext,"Login Canceled")
             }
 
             override fun onError(error: FacebookException?) {
@@ -169,27 +156,7 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         })
     }
 
-    private fun handleFacebookAccessToken(token: AccessToken) {
-        val credential = FacebookAuthProvider.getCredential(token.token)
-        auth.signInWithCredential(credential).addOnCompleteListener {task->
-            if(task.isSuccessful){
-                toast(this,"Login Facebook con éxito")
-                val userFacebook = auth.currentUser
-                val userBD: HashMap<String,String> = HashMap()
-                //Log.d(TAG,downloadImage.toString())
-                userBD["name"] = userFacebook?.displayName.toString()
-                userBD["email"] = userFacebook?.email.toString()
-                userBD["image"] = userFacebook?.photoUrl.toString()
-                dbReference.reference.child("User").child(userFacebook?.uid!!).updateChildren(
-                    userBD as Map<String, String>)
-                navigateToUserProfile()
-            }else{
-                toast(this,"Login Facebook Falló")
-            }
-        }
-    }
-
-
+    //--------------ActivityResults-----------------------
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
@@ -204,18 +171,47 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         }
     }
 
+
+    //-------------- NAVIGATES -----------------------
     override fun navigateToRegister() {
         startActivity(Intent(this, SignUpActivity::class.java))
+        overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out)
     }
 
     override fun navigateToRecoverPassword() {
         startActivity(Intent(this, RecoverPasswordActivity::class.java))
+        overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out)
     }
 
     override fun navigateToUserProfile() {
         val intent = Intent(this, UserProfileActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
+        overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out)
+    }
+
+    private fun changeClick(v:View){
+        when(v.id){
+            R.id.btnSignInFacebook->btn_login_fb.performClick()
+            R.id.btnSignInGoogle->btn_login_goo.performClick()
+        }
+    }
+
+    fun checkFields(email:String,password:String){
+        if(presenter.checkEmptyEmail(email)){
+            etxt_email.error = "Enter an e-mail, please."
+            return
+        }
+
+        if(!presenter.checkValidEmail(email)){
+            etxt_email.error = "The e-mail is invalid."
+            return
+        }
+
+        if(presenter.checkEmptyPassword(password)){
+            etxt_password.error = "Enter an password, please."
+            return
+        }
     }
 
     override fun onDestroy() {

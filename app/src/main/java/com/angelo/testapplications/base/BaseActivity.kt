@@ -21,4 +21,9 @@ abstract class BaseActivity:AppCompatActivity(){
         Toast.makeText(context,message,duration).show()
     }
 
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out)
+    }
+
 }

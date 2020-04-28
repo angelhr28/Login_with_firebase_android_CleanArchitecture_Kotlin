@@ -37,6 +37,7 @@ class SignUpInteractorImpl:SignUpInteractor {
         auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener {
 
                if(it.isSuccessful){
+
                    if(filePath != null){
                        val fotoRef:StorageReference = storageReference.child("Fotos")
                                                         .child(auth.currentUser?.uid!!)
@@ -105,17 +106,10 @@ class SignUpInteractorImpl:SignUpInteractor {
             if(it.isSuccessful){
                 Log.d(TAG,"Mensaje de verificación enviado")
                 Log.d(TAG,user.email!!)
-                //auth.signOut()
             }
             else Log.d(TAG,"Error de autenticación")
         }
     }
-
-    /*fun sendDatestoFirebase(user:FirebaseUser,name:String,email:String,password: String,downloadImage:Uri?){
-
-    }*/
-
-
 
     /*fun getResizedBitmap(bitMapImage:Bitmap, maxSize:Int):Bitmap{
 
