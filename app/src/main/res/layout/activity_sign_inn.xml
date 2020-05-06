@@ -45,7 +45,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="16dp"
-        android:background="@drawable/et_sign_in_border"
+        android:background="@drawable/edit_blue"
         android:drawableStart="@drawable/ic_email_blue"
         android:drawablePadding="10dp"
         android:hint="@string/email"
@@ -63,7 +63,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="20dp"
         android:layout_marginEnd="16dp"
-        android:background="@drawable/et_sign_in_border"
+        android:background="@drawable/edit_blue"
         android:drawableStart="@drawable/ic_fingerprint_blue"
         android:drawablePadding="10dp"
         android:hint="@string/password"
@@ -114,12 +114,10 @@
         android:textColor="@color/colorWhite"
         android:textSize="15sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/textView4"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.81"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/progressBar_signIn"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/etxt_password" />
 
     <ProgressBar
         android:id="@+id/progressBar_signIn"

@@ -1,6 +1,7 @@
 package com.angelo.testapplications.presentation.signup.view
 
 import android.app.Activity
+import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -17,6 +18,8 @@ import com.angelo.testapplications.presentation.signup.SignUpContract
 import com.angelo.testapplications.presentation.signup.presenter.SignUpPresenter
 import com.angelo.testapplications.presentation.userprofile.view.UserProfileActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 import kotlinx.android.synthetic.main.activity_sign_up.*
 import java.io.ByteArrayOutputStream
 
@@ -25,7 +28,7 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
     lateinit var presenter:SignUpPresenter
 
     private var filePath:Uri? = null
-    private val auth:FirebaseAuth by lazy {FirebaseAuth.getInstance()}
+    private var imageBitmap:Bitmap? = null
 
     companion object{
         const val REQUEST_GALLERY_CODE = 1002
@@ -37,12 +40,14 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         presenter = SignUpPresenter(SignUpInteractorImpl())
         presenter.attachView(this)
 
-        btn_select_image.setOnClickListener {
-            openGallery()
-        }
+
 
         btn_send_dates.setOnClickListener {
             signUp()
+        }
+
+        btn_select_image.setOnClickListener {
+            openGallery()
         }
 
     }
@@ -97,24 +102,13 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         super.onActivityResult(requestCode, resultCode, data)
         if(resultCode == Activity.RESULT_OK && requestCode == REQUEST_GALLERY_CODE && data != null){
 
-           filePath = data.data
+            filePath = data.data
 
             val bitMapImage = ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver,filePath!!))
-            bitMapImage.compress(Bitmap.CompressFormat.JPEG,100,ByteArrayOutputStream())
+            bitMapImage.compress(Bitmap.CompressFormat.JPEG,40,ByteArrayOutputStream())
 
-            //val bitMap = getResizedBitmap(bitMapImage,1024)
-            /*val bitMapImage:Bitmap = MediaStore.Images.Media.getBitmap(contentResolver,filePath)
-            getResizedBitmap(bitMapImage,1024)
+            imageBitmap = bitMapImage
 
-            //Comprimimos la imagen a JPEG, tenemos la calidad al 100 y hacemos con baos que la imagen sea mas ligera
-            val baos = ByteArrayOutputStream()
-            bitMapImage.compress(Bitmap.CompressFormat.JPEG,100,baos)
-
-            val data = baos.toByteArray()
-
-            var uploadTask = FirebaseStorage.getInstance().reference.putBytes(data)*/
-
-            //enviamos la imagen al imageView
             iV_Photo.setImageBitmap(bitMapImage)
         }
     }
@@ -126,19 +120,8 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
         val password = etxt_password_signUp.text.toString().trim()
         val confirmPassword = etxt_confirm_password_signUp.text.toString().trim()
         val image = filePath
+        val imageConverter = imageBitmap
 
-        checkEmptyFields(image,name,email,password, confirmPassword)
-
-        presenter.signUp(name,email,confirmPassword,image)
-    }
-
-    override fun navigateToUserProfile() {
-        val intent = Intent(this,UserProfileActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-        startActivity(intent)
-    }
-
-    fun checkEmptyFields(image:Uri?,name:String,email:String,password:String,confirmPassword:String){
         if(!presenter.checkImage(image)){
             toast(this,"Select an image, please")
             return
@@ -164,15 +147,44 @@ class SignUpActivity : BaseActivity(),SignUpContract.SignUpView {
             etxt_confirm_password_signUp.error = "The passwords do not match"
             return
         }
+
+        presenter.signUp(name,email,confirmPassword,imageConverter)
     }
+
+    override fun navigateToUserProfile() {
+        val intent = Intent(this,UserProfileActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        overridePendingTransition(android.R.anim.fade_in,android.R.anim.fade_out)
+    }
+
+    /*fun getResizedBitmap(bitMapImage:Bitmap, maxSize:Int):Bitmap{
+
+        var width = bitMapImage.width
+        var height = bitMapImage.height
+
+        if(width<=maxSize && height <= maxSize){
+            return bitMapImage
+        }
+
+        val bitMapRatio = width.toFloat() / height.toFloat()
+
+        if(bitMapRatio>1){
+            width = maxSize
+            height = (width/bitMapRatio).toInt()
+        }else{
+            height = maxSize
+            width = (height/bitMapRatio).toInt()
+        }
+
+        return Bitmap.createScaledBitmap(bitMapImage,width,height,true)
+
+    }*/
 
     override fun onDestroy() {
         super.onDestroy()
         presenter.detachView()
         presenter.detachJob()
     }
-
-
-
 
 }

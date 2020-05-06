@@ -70,9 +70,7 @@ class UserProfileActivity : BaseActivity(),UserProfileContract.UserProfileView {
     }
 
     override fun setUserFromFirebase(user: User?) {
-
         getDates(user)
-
     }
 
     override fun signOut(){

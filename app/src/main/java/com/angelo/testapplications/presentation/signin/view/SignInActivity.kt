@@ -28,6 +28,7 @@ import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.facebook.login.widget.LoginButton
 import com.google.firebase.auth.FacebookAuthProvider
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
 import java.util.*
 import java.util.Arrays.asList
@@ -48,7 +49,6 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         const val RC_SIGN_IN_FACEBOOK = 64206
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -57,7 +57,7 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
 
         //Sign in with Email and Password
         btn_signIn.setOnClickListener {
-            signIn()
+           signIn()
         }
 
         txt_register.setOnClickListener {
@@ -112,7 +112,21 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         val email = etxt_email.text.toString().trim()
         val password = etxt_password.text.toString().trim()
 
-        checkFields(email,password)
+        if(presenter.checkEmptyEmail(email)){
+            etxt_email.error = "Enter an e-mail, please."
+            return
+        }
+
+        if(!presenter.checkValidEmail(email)){
+            etxt_email.error = "The e-mail is invalid."
+            return
+        }
+
+        if(presenter.checkEmptyPassword(password)){
+            etxt_password.error = "Enter an password, please."
+            return
+        }
+
         presenter.signInWithEmailAndPassword(email,password)
     }
 
@@ -194,23 +208,6 @@ class SignInActivity : BaseActivity(),SignInContract.SignInView {
         when(v.id){
             R.id.btnSignInFacebook->btn_login_fb.performClick()
             R.id.btnSignInGoogle->btn_login_goo.performClick()
-        }
-    }
-
-    fun checkFields(email:String,password:String){
-        if(presenter.checkEmptyEmail(email)){
-            etxt_email.error = "Enter an e-mail, please."
-            return
-        }
-
-        if(!presenter.checkValidEmail(email)){
-            etxt_email.error = "The e-mail is invalid."
-            return
-        }
-
-        if(presenter.checkEmptyPassword(password)){
-            etxt_password.error = "Enter an password, please."
-            return
         }
     }
 

@@ -32,68 +32,52 @@ class SignUpInteractorImpl:SignUpInteractor {
         name: String,
         email: String,
         password: String,
-        filePath:Uri?
+        image:Bitmap?
     ):Unit = suspendCancellableCoroutine {continuation->
         auth.createUserWithEmailAndPassword(email,password).addOnCompleteListener {
 
                if(it.isSuccessful){
+                   if(image != null) {
+                       val fotoRef: StorageReference = storageReference.child("Fotos")
+                           .child(auth.currentUser?.uid!!)
+                           .child("imagen")
 
-                   if(filePath != null){
-                       val fotoRef:StorageReference = storageReference.child("Fotos")
-                                                        .child(auth.currentUser?.uid!!)
-                               //lastPathSegment obtiene el nombre del archivo de la imagen seleccionada por el usuario
-                               //lastpathSegment obtiene un valor aleatorio como nombre de la imagen seleccionada
-                                                        .child(filePath.lastPathSegment!!)
+                       val baos = ByteArrayOutputStream()
+                       image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+                       val data = baos.toByteArray()
+                       //fotoRef.putFile(uri)
 
-                       /*val bitMapImage:Bitmap = MediaStore.Images.Media.getBitmap(contentResolver,filePath)
-                       val bitMap = getResizedBitmap(bitMapImage,1024)
-
-                        val baos = ByteArrayOutputStream()
-                        val data = baos.toByteArray()
-                        val uploadTask = storageReference.putBytes(data)*/
-
-                       //fotoRef.putFile(filePath)
-                       fotoRef.putFile(filePath).continueWithTask<Uri>{task->
+                       fotoRef.putBytes(data).continueWithTask { task ->
                            if (!task.isSuccessful) {
-                               task.exception?.let {exception->
+                               task.exception?.let { exception ->
                                    throw exception
                                }
                            }
                            fotoRef.downloadUrl
 
-                       }.addOnCompleteListener {taskImage->
-                           if(taskImage.isSuccessful){
+                       }.addOnCompleteListener { taskImage ->
+                           if (taskImage.isSuccessful) {
                                val downloadImage = taskImage.result
-                               val user:FirebaseUser? = auth.currentUser
+                               val user: FirebaseUser? = auth.currentUser
 
-                               val profileUpdate: UserProfileChangeRequest = UserProfileChangeRequest.Builder()
-                                   .setDisplayName(name)
-                                   .setPhotoUri(downloadImage)
-                                   .build()
-                               user?.updateProfile(profileUpdate)?.addOnCompleteListener {updateProfileTask->
-
-                                   if(updateProfileTask.isSuccessful){
-                                       val userBD: HashMap<String,String> = HashMap()
-                                       //Log.d(TAG,downloadImage.toString())
-                                       userBD["name"] = name
-                                       userBD["email"] = email
-                                       userBD["password"] = password
-                                       userBD["image"] = downloadImage.toString()
-                                       dbReference.reference.child("User").child(user.uid).updateChildren(
-                                           userBD as Map<String, String>)
-                                       verifyEmail(user)
+                               val profileUpdate: UserProfileChangeRequest =
+                                   UserProfileChangeRequest.Builder()
+                                       .setDisplayName(name)
+                                       .setPhotoUri(downloadImage)
+                                       .build()
+                               user?.updateProfile(profileUpdate)
+                                   ?.addOnCompleteListener { updateProfileTask ->
+                                       if (updateProfileTask.isSuccessful) {
+                                           createUserIntoFirebase(user,name,email,downloadImage.toString())
+                                           verifyEmail(user)
+                                       }
                                    }
-
-                               }
-                               //continuation.resume(Unit)
                            }
                        }
                    }
-
                    continuation.resume(Unit)
-
             }else{
-                Log.d(TAG,"No se creo con exito")
+                Log.d(TAG,"No se creo el usuario")
                 continuation.resumeWithException(FirebaseSignUpException(it.exception?.message!!))
             }
 
@@ -111,28 +95,16 @@ class SignUpInteractorImpl:SignUpInteractor {
         }
     }
 
-    /*fun getResizedBitmap(bitMapImage:Bitmap, maxSize:Int):Bitmap{
-
-        var width = bitMapImage.width
-        var height = bitMapImage.height
-
-        if(width<=maxSize && height <= maxSize){
-            return bitMapImage
-        }
-
-        val bitMapRatio = width.toFloat() / height.toFloat()
-
-        if(bitMapRatio>1){
-            width = maxSize
-            height = (width/bitMapRatio).toInt()
-        }else{
-            height = maxSize
-            width = (height/bitMapRatio).toInt()
-        }
-
-        return Bitmap.createScaledBitmap(bitMapImage,width,height,true)
-
-    }*/
+    fun createUserIntoFirebase(user:FirebaseUser?,name:String,email: String,image: String){
+        val userBD: HashMap<String, String> = HashMap()
+        userBD["name"] = name
+        userBD["email"] = email
+        userBD["image"] = image
+        dbReference.reference.child("User").child(user?.uid!!)
+            .updateChildren(
+                userBD as Map<String, String>
+            )
+    }
 
 }
 

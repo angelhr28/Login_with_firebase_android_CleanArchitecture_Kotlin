@@ -58,7 +58,6 @@ class SignInInteractorImpl:SignInInteractor{
                 // Google Sign In failed, update UI appropriately
                 continuation.resumeWithException(FirebaseSignInException("Google sign in failed, error: ".plus(e.message)))
                 Log.w("GoogleSignIn", "Google sign in failed", e)
-                // ...
             }
         }
     }

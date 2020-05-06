@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.ContentResolver
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.text.TextUtils
@@ -82,12 +83,11 @@ class SignUpPresenter(val signUpInteractor:SignUpInteractor):SignUpContract.Sign
     }
 
 
-    override fun signUp(name: String, email: String, password: String, filePath:Uri?) {
+    override fun signUp(name: String, email: String, password: String, image:Bitmap?) {
         launch {
             view?.showProgressBar()
             try {
-
-                signUpInteractor.createUserWithEmailAndPassword(name,email,password,filePath!!)
+                signUpInteractor.createUserWithEmailAndPassword(name,email,password,image!!)
                 if(isViewAttached()){
                     view?.hideProgressBar()
                     view?.navigateToUserProfile()

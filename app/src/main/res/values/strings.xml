@@ -18,4 +18,5 @@
     <string name="sign_out">Sign Out</string>
     <string name="email">Email</string>
     <string name="sign_in_with_facebook">Sign In With Facebook </string>
+    <string name="change_password">Don\'t worry! Just fill in your email and \nwe\'ll send you a link to reset your password.</string>
 </resources>

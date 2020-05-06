@@ -1,6 +1,7 @@
 package com.angelo.testapplications.presentation.signup
 
 
+import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
 
@@ -37,7 +38,7 @@ interface SignUpContract {
                                    grantResults: IntArray)
 
 
-        fun signUp(name:String,email:String,password:String,filePath:Uri?)
+        fun signUp(name:String,email:String,password:String,image: Bitmap?)
 
     }
 
