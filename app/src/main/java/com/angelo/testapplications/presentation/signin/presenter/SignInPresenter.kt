@@ -62,7 +62,7 @@ class SignInPresenter(val signInInteractor:SignInInteractor):SignInContract.Sign
             view?.showProgressBar()
             try {
                 signInInteractor.signInWithEmailAndPassword(email,password)
-                if(isViewAttached()){
+                if(isViewAttached()){ //
                     view?.hideProgressBar()
                     view?.navigateToUserProfile()
                 }
